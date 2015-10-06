@@ -1,0 +1,527 @@
+import arb.soundcipher.*;
+SCScore[] score = {
+  new SCScore(), new SCScore(), new SCScore(), new SCScore(), new SCScore()
+};
+SoundCipher[] sc = {
+  new SoundCipher(this), new SoundCipher(this), new SoundCipher(this), new SoundCipher(this), new SoundCipher(this)
+};
+//import processing.video.*;
+import java.awt.Point;
+import com.onformative.screencapturer.*;
+ScreenCapturer capturer;
+
+
+PImage destination;  // Destination image
+PImage source, cam;       // Source image
+float[] pitches = {
+  0, 4, 7, 9
+};
+int tempo = 80;
+int nbuttons=3;
+int beat; // which beat we're on
+float beatDur=0;
+float tempoFrame=1;
+float timeDuration=16;
+float numBts=1;
+
+boolean[] hatRow = new boolean[nbuttons];
+boolean[] snrRow = new boolean[nbuttons];
+boolean[] kikRow = new boolean[nbuttons];
+
+ArrayList<Rect> buttons = new ArrayList<Rect>();
+
+float interspace;
+float wbuttons;
+float initx;
+//
+float proporSpace=0.6;
+float proporButton=0.4;
+float maxButtonYpos=0.8;
+float minButtonYpos=0.2;
+//
+
+float[] rhythm=new float[nbuttons];
+float rhythm1=2;
+float rhythm2=4;
+float rhythm3=2;
+
+
+float[] proportionv = new float[3] ;
+float[] proportionh =  new float[3] ;
+
+
+int[] H = new int[3];
+int[] V = new int[3];
+int countPhrase=0;
+int numPhrases=1;
+int silenceInVerse=3;
+int delayTime=0;
+//String img1 = "reeks.jpg";
+float arrow=0;
+
+int countVerse=0;
+float sensibleColor=254;
+color colorSelected;
+//  w=800;  h=118;
+
+
+float[] bassPitches = new float[4];
+
+
+void setup()
+{
+  size(800, 118);
+  println();
+   print("Blues:"+sc[1].BLUES.length);
+   for(int a=0;a<sc[1].BLUES.length;a++){
+     print(" "+sc[1].BLUES[a]);
+   }
+   println();
+  
+   for(int a=0;a<4;a++){
+       bassPitches[a]=36;
+  }
+   
+   
+float r=5;
+float mr=0;
+for(int a=0;a<nbuttons;a++){
+  //if(ra%3==0){r=5;}
+rhythm[a]=r;//rhythm[a]=r*r;//(a/2)*a+1;//random(a)+1;
+r+=mr;
+}
+  /*
+  proportionh[0] = 0.1;
+   proportionh[1] = 2.0 / 3.0 ; 
+   proportionh[2] = 1.0 / 2.0; 
+   
+   proportionv[0] = 0; 
+   proportionv[1] = 1.0 / 4.0 - 1.0 / 19.0; 
+   proportionv[2] = 1.0 / 2.0 + 1.0 / 6 ;
+   */
+
+  proportionh[0] = 0.40;
+  proportionh[1] = 0.5 ; 
+  proportionh[2] = 0.6; 
+
+  proportionv[0] = 0; 
+  proportionv[1] = 1.0 / 3; 
+  proportionv[2] = 2.0 / 3 ; 
+
+
+
+  //  println("proportions = "+proportionh[0]+"  "+proportionh[1]+" "+proportionh[2]);
+  H[0]=int((height * proportionh[0]));
+  H[1]=int(height * proportionh[1]);
+  H[2]=int(height * proportionh[2]);
+  V[0]=int((width * proportionv[0]));
+  V[1]=int(width * proportionv[1]);
+  V[2]=int(width * proportionv[2]);
+
+  //println("Horizontaly = "+H[0]+"  "+H[1]+" "+H[2]);
+
+  //cam = loadImage(img1);  
+  cam= createImage(width, height, RGB);
+  capturer = new ScreenCapturer(width, height, 100, 100, 25);
+  //loadPixels();
+  colorSelected= color (0, 0, 0) ;
+  initx=((width / nbuttons)*proporSpace)*1;    
+  interspace = ((width-initx*1)  / nbuttons) * proporSpace ;
+  wbuttons = ((width-initx*1 ) / nbuttons) * proporButton ;
+  for (int i = 0; i < nbuttons; i++)
+  {
+    buttons.add( new Rect(int(initx+interspace*(i)+i*wbuttons), H[2], hatRow, i ) );
+    buttons.add( new Rect(int(initx+interspace*(i)+i*wbuttons), H[1], snrRow, i ) );
+    buttons.add( new Rect(int(initx+interspace*(i)+i*wbuttons), H[0], kikRow, i ) );
+  }
+
+  beat = 0;
+  score[1].tempo(tempo);
+  score[2].tempo(tempo);
+  score[3].tempo(tempo);
+  score[1].addCallbackListener(this);  
+
+  // kick drum
+  //recordKick(100);
+  // hi hats
+  //recordHats(70.0);
+  //bass
+  //recordBass(40.0, 1,12);
+  //
+
+  beatDur=60/tempo;
+  //beat[2]=60/tempo;
+  tempoFrame=map(beatDur, 0, timeDuration, 0, width);
+  numBts=timeDuration/beatDur;
+  frameRate(rhythm1);
+}
+
+void draw()
+{
+  getImage();
+  fill(255);
+  if (beat==0 && countPhrase%numPhrases==0) {
+    //score[3].empty();
+    //recordBass();
+    //score[3].update();
+  }  
+
+
+  for (int i = 0; i < buttons.size (); ++i)
+  {
+    if (i==countVerse*3 ) {
+      buttons.get(i).draw(1);
+    } else {
+      buttons.get(i).draw(0);
+    }
+  }
+
+  stroke(128);
+  if ( beat % 4 == 0 )
+  {
+    fill(200, 0, 0);
+  } else
+  {
+    fill(0, 200, 0);
+  }
+  // beat marker
+
+  //float arrow=initx+interspace*beat+beat*wbuttons;
+  arrow=initx+interspace*beat+beat*wbuttons;
+
+  /*
+  if (arrow<V[1] ) {
+    frameRate(rhythm1);
+  }
+  if (arrow>V[1] && arrow<V[2]) {
+    frameRate(rhythm2);
+  }
+  if (arrow>V[2]) {
+    frameRate(rhythm3);
+  }
+  */
+  frameRate(rhythm[beat]);
+
+  rect(arrow, 0, 14, 9);
+  
+  fill(0, 20, 0, 20);
+  noStroke(); 
+  rect(V[1], 0, V[2]-V[1], height);
+  //line(V[0], 0, V[0], height);
+  //line(V[1], 0, V[1], height);
+  //line(V[2], 0, V[2], height);
+  float verseXpos=initx+interspace*countVerse+countVerse*wbuttons;
+  //noFill();
+  fill(220, 220, 30, 70);
+  rect((verseXpos-interspace/2), 0, wbuttons+interspace, height);
+  stroke(0);
+  if (frameCount%2==0) {  
+    if ( hatRow[beat] ) { 
+      score[3].play();
+    }
+    if ( snrRow[beat] ) { 
+      score[2].play();
+    }
+    if ( kikRow[beat] ) { 
+      score[1].play();
+    }
+  } else {
+    beat = (beat+1)%nbuttons;
+  }
+
+  if (beat==0 ) {
+    countPhrase++;
+  }
+  if (countPhrase%numPhrases==0) {
+    //rhythm2=random(10)+10;
+    //rhythm3=random(20)+10;
+  }
+  if (beat==0 && countPhrase%numPhrases==0) {
+
+    sensibleColor=random(100)+154;
+    countVerse++;
+    if (countVerse%silenceInVerse==0) {
+      myDelay(delayTime);
+    }
+    if (countVerse>=nbuttons) {
+      countVerse=0;
+      /*
+      proporSpace=random(0.9)+0.1;
+       proporButton=(0.9-proporSpace)+0.1;
+       
+       initx=((width / nbuttons)*proporSpace)*1;    
+       interspace = ((width-initx*1)  / nbuttons) * proporSpace ;
+       wbuttons = ((width-initx*1 ) / nbuttons) * proporButton ;
+       for (int i = 0; i < nbuttons; i++)
+       {
+       buttons.get(i).update(int(initx+interspace*(i)+i*wbuttons), H[2], hatRow, i  );
+       buttons.get(i).update(int(initx+interspace*(i)+i*wbuttons), H[1], snrRow, i  );
+       buttons.get(i).update(int(initx+interspace*(i)+i*wbuttons), H[0], kikRow, i  );
+       }
+       */
+    }
+  }
+}
+
+
+void getImage() {
+  cam=capturer.getImage();
+  image(cam, 0, 0);
+  if (beat==0 && countPhrase%numPhrases==0) {
+    if (countVerse%silenceInVerse==0) {
+      //filter(INVERT);
+      //tint(random(255), random(255), random(255),60);
+    }
+  }
+  loadPixels();
+}
+
+boolean colorDistance(int x, int y, float limit) {
+  color color1;
+  int loc = x+y*width;
+  color1 = pixels[loc];
+
+  float avghue = (hue(color1) + hue(colorSelected))/2;
+  float distance = abs(hue(color1)-avghue);
+  if (distance<limit) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+boolean pointBrightBool(int x, int y, float limit) {
+  boolean pointb=false;
+  float bright=0;
+  color micolor;
+  int loc = x+y*width;
+  micolor = pixels[loc];
+  bright=brightness(micolor);
+
+  if (bright>limit) {
+
+    pointb=true;
+  }
+  return pointb;
+}
+
+float pointBright(int x, int y, float limit) {
+  boolean pointb=false;
+  float bright=0;
+  color micolor;
+  int loc = x+y*width;
+  micolor = pixels[loc];
+  bright=brightness(micolor);
+  return bright;
+}
+
+float pointHue(int x, int y, float limit) {
+  //boolean pointb=false;
+  float tono=0;
+  color micolor;
+  int loc = x+y*width;
+  println(" "+x+", "+y);
+  micolor = pixels[loc];
+  tono=hue(micolor);
+  return tono;
+}
+
+
+
+void recordHats(float dynamic) {
+  for (float i=0; i<8; i++) {
+    //score[2].addNote(i/2, 9, 0, 42, cos(i * 3.14159 * 2 * .25) * 30 + dynamic, 0.5, 0.8, 64);
+    score[2].addNote(i/2, 9, 0, 42, cos(i * 3.14159 * 2 * .25) * 30 + dynamic, 0.5, 0.8, random(127));
+  }
+}
+
+void recordKick(float dynamic) {
+  score[1].addNote(0, 9, 0, 36, dynamic*1.5, 0.5, 0.8, random(127));
+  score[1].addNote(0.5, 9, 0, 36, dynamic, 0.5, 0.8, random(127));
+}
+
+void recordBass(float dynamic, int x, int y) {
+  // bass
+  
+  float[] bassDynamics = new float[4];
+
+  float[] bassDurations = new float[4];
+
+  float[] bassArticulations = new float[4];
+
+  float[] bassPans = new float[4];
+
+  
+  int[] Pitch = new int[4];
+  float huepitch=0.1;
+
+  for(int a=0;a<4;a++){
+    huepitch=pointHue(x, y-a, 0.1);
+    Pitch[a]=parseInt(map(huepitch,0,255,0,sc[1].BLUES.length));
+    if(bassPitches[a]>36+12){bassPitches[a]=36;}
+    //bassPitches[a]=36;
+  }
+  
+  
+
+  for (int i=0; i<4; i++) {
+
+    if (i<1) {
+
+      bassDurations[i] = 1;  
+
+      //bassPitches[i] = 30+random(10);
+      
+      //bassPitches[i]= sc[1].pcRandomWalk(36, 12, sc[1].BLUES);
+     bassPitches[i]=bassPitches[i]+sc[1].BLUES[Pitch[i]];
+      
+    } else {
+
+      bassDurations[i] = random(1) * 0.5 + 0.5;
+      
+      bassPitches[i]=bassPitches[i]+sc[1].BLUES[Pitch[i]];
+      //bassPitches[i]= sc[1].pcRandomWalk(36, 12, sc[1].BLUES);
+      //bassPitches[i] = 36 + pitches[(int)(random(pitches.length))];
+    }
+
+    bassDynamics[i] = random(50) + dynamic;
+
+    bassArticulations[i] = 0.7+random(0.7);
+
+    bassPans[i] = random(127);
+  }
+
+  score[3].addPhrase(0, 0, 34, bassPitches, bassDynamics, bassDurations, bassArticulations, bassPans);
+}
+
+
+
+class Rect 
+{
+  int x, y, w, h;
+  boolean[] steps;
+  int stepId;
+
+  public Rect(int _x, int _y, boolean[] _steps, int _id)
+  {
+    x = _x;
+    y = _y;
+    w = int(wbuttons);
+    h =  4;
+    steps = _steps;
+    stepId = _id;
+  }
+
+  public void update(int _x, int _y, boolean[] _steps, int _id)
+  {
+    x = _x;
+    y = _y;
+    w = int(wbuttons);
+    h =  4;
+    steps = _steps;
+    stepId = _id;
+  }
+
+
+  public void draw(int inside)
+  {
+    //steps[stepId]= pointBright(x, y, sensibleColor);
+    steps[stepId]= colorDistance(x, y, 10);
+    if ( steps[stepId] )
+    {
+      fill(0, 255, 0, 150);
+    } else
+    {
+      fill(255, 0, 0, 150);
+    }
+    if (inside==1) {
+      float pointbrigth=pointBright(x, y, 1);
+      float rkick=map(pointbrigth, 0, 255, 0, 70);
+      float rhats=map(pointbrigth, 0, 255, 0, 40);
+      float rbass=map(pointbrigth, 0, 255, 0, 10);
+      println(pointbrigth);
+      score[1].empty();
+      score[2].empty();
+      score[3].empty();
+      recordKick(rkick);
+      recordHats(rhats);
+      recordBass(rbass,x,y);
+      score[1].update();
+      score[2].update();
+      score[3].update();
+      //fill (255, 255, 255,0);
+      noFill();
+      colorSelected=pixels[x+y*width];     
+      rect(x-h/2, y-h/2, h, h);
+      rect(x-h, y-h, h*2, h*2);
+      rect(x-h*2, y-h*2, h*4, h*4);
+    } else {
+      rect(x-h/2, y-h/2, h, h);
+    }
+
+    //rect(x, y, w, h);
+  }
+
+  public void mousePressed()
+  {
+    if ( mouseX >= x && mouseX <= x+w && mouseY >= y && mouseY <= y+h )
+    {
+      steps[stepId] = !steps[stepId];
+    }
+  }
+}
+
+/////////////////////////
+
+void handleCallbacks(int id) {
+  //score[1].tempo(tempo );
+}
+
+
+
+class Secuencia { 
+  int n; 
+  String name; 
+  float[] secuencia; 
+  Secuencia(int _n, String _name, float[] secuencia1) {
+    n=_n;
+    name=_name;
+    secuencia=secuencia1;
+  }
+}
+
+
+
+void myDelay(int ms)
+{
+  try
+  {    
+    Thread.sleep(ms);
+  }
+  catch(Exception e) {
+  }
+}
+
+
+void mousePressed() {
+  colorSelected=pixels[mouseX+mouseY*width];
+}
+
+
+void keyPressed() {
+  if (key=='1') {
+    frameRate(5);
+    score[3].empty();
+    recordBass(100,1,12);
+    score[3].update();
+  }
+  if (key=='2') {
+    frameRate(10);
+  }
+  if (key=='3') {
+    frameRate(20);
+  }
+  if (key=='s') {
+    saveFrame("capture.png");
+  }
+}
