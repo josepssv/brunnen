@@ -8,9 +8,22 @@ SoundCipher[] sc = {
 
   import processing.video.*;
 import java.awt.Point;
-import com.onformative.screencapturer.*;
-ScreenCapturer capturer;
+
 Point capturePoint;
+
+
+import oscP5.*; // -->se importan las librerías oscP5 y netP5
+import netP5.*;
+import java.awt.Point;
+OscP5 oscP5; //--> definición del objeto
+NetAddress direccionRemota;
+NetAddress myRemoteLocation; 
+OscMessage myMessage;
+
+OscP5 oscP5b;
+ScreenCapturer capturer;
+
+
 
 PImage destination;  // Destination image
 PImage source, cam;       // Source image
